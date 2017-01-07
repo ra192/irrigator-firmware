@@ -12,6 +12,11 @@ void init()
 {
 	TCCR0A|=(1<<CS02)|(1<<CS01);
 	TIMSK0=1<<TOIE0;
+	
+	DDRD|=(1<<PD5)|(1<<PD6);
+	
+	ADMUX|=1<<REFS0;
+	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 }
 
 uint16_t tick_cnt;
@@ -20,25 +25,20 @@ ISR(TIMER0_OVF_vect) {
 	tick_cnt++;
 }
 
-#define BUTTON_HOLD_DELAY 5
-
-
 typedef struct
 {
-	uint8_t curr_state, prev_state, last_change_tick;
+	uint8_t curr_state, prev_state;
 	void(*handler)();	
 } BUTTON;
 
-void handle_button(BUTTON button)
-{
-	if(button.prev_state != button.curr_state)
-	{
-		uint8_t delay=(tick_cnt<button.last_change_tick)?button.last_change_tick:tick_cnt-button.last_change_tick;
-		if(delay>BUTTON_HOLD_DELAY && !button.curr_state)(*button.handler)();
-		
-		button.prev_state=button.curr_state;
-		button.last_change_tick=tick_cnt;
-	}	
+void handle_button(BUTTON* button)
+{	
+	 	if(button->prev_state != button->curr_state)
+   		{ 
+   			if(!button->curr_state) button->handler();
+			button->prev_state=button->curr_state;
+		}
+ 	
 }
 
 typedef struct  
@@ -60,7 +60,7 @@ void manage_task_queue()
 			else
 			{
 				task_queue[i]=0;
-				(*task->handler)();	
+				task->handler();	
 			}
 		}
 	}
@@ -70,8 +70,8 @@ void add_task(TASK* task)
 {
 	for(int i=0;i<TASK_QUEUE_SIZE;i++)
 	{
-		TASK* task=task_queue[i];
-		if(task==0)
+		TASK* itm=task_queue[i];
+		if(itm==0)
 		{
 			task_queue[i]=task;
 			break;
@@ -79,50 +79,96 @@ void add_task(TASK* task)
 	}
 }
 
-BUTTON button_minus_button;
-TASK button_minus_task;
+BUTTON minus_button;
 
-void button_minus_handler()
+void handle_minus_button()
 {
-	PORTB^=1<<PB4;
+	PORTD^=1<<PD6;
 }
 
-#define BUTTON_DELAY 5
+BUTTON plus_button;
 
-void button_minus()
+void handle_plus_button()
 {
-	button_minus_button.curr_state=PINB & (1<<PINB0);
-	handle_button(button_minus_button);
-	
-	button_minus_task.delay=BUTTON_DELAY;
-	add_task(&button_minus_task);
+	PORTD^=1<<PD6;
 }
 
-#define TOGGLE_DELAY 255
+#define BUTTON_DELAY 255
+TASK scan_buttons_task;
+
+void scan_buttons()
+{
+ 	minus_button.curr_state=PINB & (1<<PINB1);
+ 	handle_button(&minus_button);
+
+	plus_button.curr_state=PINB & (1<<PINB0);
+	handle_button(&plus_button);	
+
+	add_task(&scan_buttons_task);
+}
+
+#define TOGGLE_DELAY 1024
 TASK toggle_led_task;
 
 void toggle_led()
 {
-	PORTB^=1<<PB3;
+	PORTD^=1<<PD5;
 	
-	toggle_led_task.delay=TOGGLE_DELAY;
 	add_task(&toggle_led_task);
+}
+
+TASK start_adc_task;
+TASK control_switch_task;
+
+#define ADC_DELAY 1
+void start_adc()
+{
+	ADCSRA |= (1<<ADSC);
+	add_task(&control_switch_task);
+}
+
+uint16_t sens_low_val;
+#define CONTROL_SWITCH_DELAY 1024
+void control_switch()
+{
+	if(ADC<sens_low_val)
+	{
+		PORTD|=1<<PD3;
+	} else
+	{
+		PORTD&=~(1<<PD3);
+	}
+	
+	add_task(&start_adc_task);
 }
 
 int main(void)
 {
 	init();
 	
-	button_minus_button.handler=button_minus_handler;
-	button_minus_task.handler=button_minus;
+	minus_button.handler=handle_minus_button;
+	plus_button.handler=handle_plus_button;
 	
+	scan_buttons_task.delay=BUTTON_DELAY;
+	scan_buttons_task.handler=scan_buttons;
+	
+	add_task(&scan_buttons_task);
+	
+	toggle_led_task.delay=TOGGLE_DELAY;
 	toggle_led_task.handler=toggle_led;
-	
-	add_task(&button_minus_task);
 		
-	DDRB|=1<<PB3;
+	add_task(&toggle_led_task);
 	
-    /* Replace with your application code */
+	start_adc_task.delay=CONTROL_SWITCH_DELAY;
+	start_adc_task.handler=start_adc;
+	
+	add_task(&start_adc_task);
+	
+	control_switch_task.delay=ADC_DELAY;
+	control_switch_task.handler=control_switch;
+	
+	add_task(&control_switch_task);
+	
     while (1) 
     {
 		manage_task_queue();
