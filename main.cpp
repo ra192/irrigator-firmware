@@ -7,6 +7,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include "task.h"
 
 void init()
 {
@@ -39,44 +40,6 @@ void handle_button(BUTTON* button)
 			button->prev_state=button->curr_state;
 		}
  	
-}
-
-typedef struct  
-{
-	uint16_t delay;
-	void(*handler)();
-} TASK;
-
-#define TASK_QUEUE_SIZE 5
-TASK* task_queue[TASK_QUEUE_SIZE];
-
-void manage_task_queue()
-{
-	for(int i=0;i<TASK_QUEUE_SIZE;i++)
-	{	TASK* task=task_queue[i];
-		if (task!=0)
-		{
-			if(task->delay>0) task->delay--;
-			else
-			{
-				task_queue[i]=0;
-				task->handler();	
-			}
-		}
-	}
-}
-
-void add_task(TASK* task)
-{
-	for(int i=0;i<TASK_QUEUE_SIZE;i++)
-	{
-		TASK* itm=task_queue[i];
-		if(itm==0)
-		{
-			task_queue[i]=task;
-			break;
-		}
-	}
 }
 
 BUTTON minus_button;
@@ -167,9 +130,7 @@ int main(void)
 	control_switch_task.delay=ADC_DELAY;
 	control_switch_task.handler=control_switch;
 	
-	add_task(&control_switch_task);
-	
-    while (1) 
+	while (1) 
     {
 		manage_task_queue();
     }
