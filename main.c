@@ -7,6 +7,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/eeprom.h>
+
 #include "task.h"
 
 void init()
@@ -44,16 +46,21 @@ void handle_button(BUTTON* button)
 
 BUTTON minus_button;
 
+uint16_t EEMEM sens_low_eemem=512;
+uint16_t sens_low_val;
+
 void handle_minus_button()
 {
-	PORTD^=1<<PD6;
+	sens_low_val--;
+	eeprom_update_word(&sens_low_eemem, sens_low_val);
 }
 
 BUTTON plus_button;
 
 void handle_plus_button()
 {
-	PORTD^=1<<PD6;
+	sens_low_val++;
+	eeprom_update_word(&sens_low_eemem, sens_low_val);
 }
 
 #define BUTTON_DELAY 255
@@ -90,16 +97,15 @@ void start_adc()
 	add_task(&control_switch_task);
 }
 
-uint16_t sens_low_val;
 #define CONTROL_SWITCH_DELAY 1024
 void control_switch()
 {
 	if(ADC<sens_low_val)
 	{
-		PORTD|=1<<PD3;
+		PORTD|=(1<<PD3)|(1<<PD6);
 	} else
 	{
-		PORTD&=~(1<<PD3);
+		PORTD&=~((1<<PD3)|(1<<PD6));
 	}
 	
 	add_task(&start_adc_task);
@@ -108,6 +114,8 @@ void control_switch()
 int main(void)
 {
 	init();
+	
+	sens_low_val=eeprom_read_word(&sens_low_eemem);
 	
 	minus_button.handler=handle_minus_button;
 	plus_button.handler=handle_plus_button;
