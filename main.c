@@ -46,21 +46,24 @@ void handle_button(BUTTON* button)
 
 BUTTON minus_button;
 
-uint16_t EEMEM sens_low_eemem=512;
-uint16_t sens_low_val;
+uint16_t EEMEM sens_high_eemem=512;
+uint16_t sens_high_val;
+
+uint16_t EEMEM sens_max_eemem=896;
+uint16_t sens_max_val;
 
 void handle_minus_button()
 {
-	sens_low_val--;
-	eeprom_update_word(&sens_low_eemem, sens_low_val);
+	sens_high_val--;
+	eeprom_update_word(&sens_high_eemem, sens_high_val);
 }
 
 BUTTON plus_button;
 
 void handle_plus_button()
 {
-	sens_low_val++;
-	eeprom_update_word(&sens_low_eemem, sens_low_val);
+	sens_high_val++;
+	eeprom_update_word(&sens_high_eemem, sens_high_val);
 }
 
 #define BUTTON_DELAY 255
@@ -100,7 +103,7 @@ void start_adc()
 #define CONTROL_SWITCH_DELAY 1024
 void control_switch()
 {
-	if(ADC<sens_low_val)
+	if(ADC>sens_high_val && ADC<sens_max_val)
 	{
 		PORTD|=(1<<PD3)|(1<<PD6);
 	} else
@@ -115,7 +118,8 @@ int main(void)
 {
 	init();
 	
-	sens_low_val=eeprom_read_word(&sens_low_eemem);
+	sens_high_val=eeprom_read_word(&sens_high_eemem);
+	sens_max_val=eeprom_read_word(&sens_max_val);
 	
 	minus_button.handler=handle_minus_button;
 	plus_button.handler=handle_plus_button;
