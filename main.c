@@ -13,7 +13,7 @@
 
 void init()
 {
-	TCCR0A|=(1<<CS02)|(1<<CS01);
+	TCCR0B|=(1<<CS02)|(1<<CS00);
 	TIMSK0=1<<TOIE0;
 	
 	DDRD|=(1<<PD5)|(1<<PD6);
@@ -87,6 +87,7 @@ void toggle_led()
 {
 	PORTD^=1<<PD5;
 	
+	toggle_led_task.delay=TOGGLE_DELAY;
 	add_task(&toggle_led_task);
 }
 
@@ -97,6 +98,7 @@ TASK control_switch_task;
 void start_adc()
 {
 	ADCSRA |= (1<<ADSC);
+	control_switch_task.delay=ADC_DELAY;
 	add_task(&control_switch_task);
 }
 
@@ -111,6 +113,7 @@ void control_switch()
 		PORTD&=~((1<<PD3)|(1<<PD6));
 	}
 	
+	start_adc_task.delay=CONTROL_SWITCH_DELAY;
 	add_task(&start_adc_task);
 }
 
@@ -124,22 +127,15 @@ int main(void)
 	minus_button.handler=handle_minus_button;
 	plus_button.handler=handle_plus_button;
 	
-	scan_buttons_task.delay=BUTTON_DELAY;
 	scan_buttons_task.handler=scan_buttons;
-	
 	add_task(&scan_buttons_task);
 	
-	toggle_led_task.delay=TOGGLE_DELAY;
 	toggle_led_task.handler=toggle_led;
-		
 	add_task(&toggle_led_task);
 	
-	start_adc_task.delay=CONTROL_SWITCH_DELAY;
 	start_adc_task.handler=start_adc;
-	
 	add_task(&start_adc_task);
 	
-	control_switch_task.delay=ADC_DELAY;
 	control_switch_task.handler=control_switch;
 	
 	while (1) 
