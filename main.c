@@ -13,8 +13,8 @@
 
 void init()
 {
-	TCCR0B|=(1<<CS02)|(1<<CS00);
-	TIMSK0=1<<TOIE0;
+	TCCR0|=(1<<CS02)|(1<<CS00);
+	TIMSK=1<<TOIE0;
 	
 	DDRD|=(1<<PD5)|(1<<PD6);
 	
