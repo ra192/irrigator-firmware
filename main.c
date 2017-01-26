@@ -16,7 +16,7 @@ void init()
 	TCCR0|=(1<<CS02)|(1<<CS00);
 	TIMSK=1<<TOIE0;
 	
-	DDRD|=(1<<PD5)|(1<<PD6);
+	DDRD|=(1<<PD3)|(1<<PD5)|(1<<PD6);
 	
 	ADMUX|=1<<REFS0;
 	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
@@ -122,7 +122,7 @@ int main(void)
 	init();
 	
 	sens_high_val=eeprom_read_word(&sens_high_eemem);
-	sens_max_val=eeprom_read_word(&sens_max_val);
+	sens_max_val=eeprom_read_word(&sens_max_eemem);
 	
 	minus_button.handler=handle_minus_button;
 	plus_button.handler=handle_plus_button;
