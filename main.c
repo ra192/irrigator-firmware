@@ -17,6 +17,7 @@ void init()
 	TIMSK=1<<TOIE0;
 	
 	DDRD|=(1<<PD3)|(1<<PD5)|(1<<PD6);
+	DDRC|=(1<<PC1);
 	
 	ADMUX|=1<<REFS0;
 	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
@@ -97,6 +98,8 @@ TASK control_switch_task;
 #define ADC_DELAY 1
 void start_adc()
 {
+	PORTC|=1<<PORTC1;
+	
 	ADCSRA |= (1<<ADSC);
 	control_switch_task.delay=ADC_DELAY;
 	add_task(&control_switch_task);
@@ -105,6 +108,8 @@ void start_adc()
 #define CONTROL_SWITCH_DELAY 1024
 void control_switch()
 {
+	PORTC&=~(1<<PORTC1);
+	
 	if(ADC>sens_high_val && ADC<sens_max_val)
 	{
 		PORTD|=(1<<PD3)|(1<<PD6);
