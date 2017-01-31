@@ -10,6 +10,7 @@
 #include <avr/eeprom.h>
 
 #include "task.h"
+#include "button.h"
 
 void init()
 {
@@ -29,41 +30,39 @@ ISR(TIMER0_OVF_vect) {
 	tick_cnt++;
 }
 
-typedef struct
-{
-	uint8_t curr_state, prev_state;
-	void(*handler)();	
-} BUTTON;
-
-void handle_button(BUTTON* button)
-{	
-	 	if(button->prev_state != button->curr_state)
-   		{ 
-   			if(!button->curr_state) button->handler();
-			button->prev_state=button->curr_state;
-		}
- 	
-}
-
-BUTTON minus_button;
-
 uint16_t EEMEM sens_high_eemem=512;
 uint16_t sens_high_val;
 
 uint16_t EEMEM sens_max_eemem=896;
 uint16_t sens_max_val;
 
-void handle_minus_button()
+#define HOLD_CNT 10
+
+BUTTON minus_button;
+
+void press_minus_button()
 {
 	sens_high_val--;
 	eeprom_update_word(&sens_high_eemem, sens_high_val);
 }
 
+void hold_minus_button()
+{
+	sens_high_val-=HOLD_CNT;
+	eeprom_update_word(&sens_high_eemem, sens_high_val);
+}
+
 BUTTON plus_button;
 
-void handle_plus_button()
+void press_plus_button()
 {
 	sens_high_val++;
+	eeprom_update_word(&sens_high_eemem, sens_high_val);
+}
+
+void hold_plus_button()
+{
+	sens_high_val+=HOLD_CNT;
 	eeprom_update_word(&sens_high_eemem, sens_high_val);
 }
 
@@ -78,6 +77,7 @@ void scan_buttons()
 	plus_button.curr_state=PINB & (1<<PINB0);
 	handle_button(&plus_button);	
 
+	scan_buttons_task.delay=BUTTON_DELAY;
 	add_task(&scan_buttons_task);
 }
 
@@ -129,8 +129,11 @@ int main(void)
 	sens_high_val=eeprom_read_word(&sens_high_eemem);
 	sens_max_val=eeprom_read_word(&sens_max_eemem);
 	
-	minus_button.handler=handle_minus_button;
-	plus_button.handler=handle_plus_button;
+	minus_button.press_handler=press_minus_button;
+	minus_button.hold_handler=hold_minus_button;
+	
+	plus_button.press_handler=press_plus_button;
+	plus_button.hold_handler=hold_plus_button;
 	
 	scan_buttons_task.handler=scan_buttons;
 	add_task(&scan_buttons_task);
