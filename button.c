@@ -19,7 +19,7 @@ void handle_button(BUTTON* button)
 		}
 		else
 		{
-			if(!button->hold_cnt++ % HOLD_HANDLER_CNT)
+			if(!(++button->hold_cnt % HOLD_HANDLER_CNT))
 			{
 				if(button->hold_handler) button->hold_handler();
 			}

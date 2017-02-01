@@ -36,7 +36,7 @@ uint16_t sens_high_val;
 uint16_t EEMEM sens_max_eemem=896;
 uint16_t sens_max_val;
 
-#define HOLD_CNT 10
+#define HOLD_CNT 16
 
 BUTTON minus_button;
 

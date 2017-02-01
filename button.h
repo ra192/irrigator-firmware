@@ -11,7 +11,7 @@
 
 #include <avr/io.h>
 
-#define HOLD_HANDLER_CNT 10
+#define HOLD_HANDLER_CNT 32
 
 typedef struct
 {
