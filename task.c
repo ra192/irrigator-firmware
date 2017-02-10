@@ -4,10 +4,18 @@ void manage_task_queue()
 {
 	for(int i=0;i<TASK_QUEUE_SIZE;i++)
 	{	TASK* task=task_queue[i];
+		if (task!=0 && task->delay>0) task->delay--;
+			
+	}
+}
+
+void run_tasks()
+{
+	for(int i=0;i<TASK_QUEUE_SIZE;i++)
+	{	TASK* task=task_queue[i];
 		if (task!=0)
 		{
-			if(task->delay>0) task->delay--;
-			else
+			if(task->delay==0)
 			{
 				task_queue[i]=0;
 				task->handler();

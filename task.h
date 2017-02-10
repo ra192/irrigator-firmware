@@ -15,5 +15,6 @@ TASK* task_queue[TASK_QUEUE_SIZE];
 
 void manage_task_queue();
 void add_task(TASK* task);
+void run_tasks();
 
 #endif

@@ -14,7 +14,7 @@
 
 void init()
 {
-	TCCR0|=(1<<CS02)|(1<<CS00);
+	TCCR0|=(1<<CS01)|(1<<CS00);
 	TIMSK=1<<TOIE0;
 	
 	DDRD|=(1<<PD3)|(1<<PD5)|(1<<PD6);
@@ -24,10 +24,8 @@ void init()
 	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 }
 
-uint16_t tick_cnt;
-
 ISR(TIMER0_OVF_vect) {
-	tick_cnt++;
+	manage_task_queue();
 }
 
 uint16_t EEMEM sens_high_eemem=512;
@@ -66,7 +64,7 @@ void hold_plus_button()
 	eeprom_update_word(&sens_high_eemem, sens_high_val);
 }
 
-#define BUTTON_DELAY 255
+#define BUTTON_DELAY 8
 TASK scan_buttons_task;
 
 void scan_buttons()
@@ -81,7 +79,7 @@ void scan_buttons()
 	add_task(&scan_buttons_task);
 }
 
-#define TOGGLE_DELAY 2048
+#define TOGGLE_DELAY 32
 TASK toggle_led_task;
 
 void toggle_led()
@@ -105,7 +103,7 @@ void start_adc()
 	add_task(&control_switch_task);
 }
 
-#define CONTROL_SWITCH_DELAY 2048
+#define CONTROL_SWITCH_DELAY 256
 void control_switch()
 {
 	PORTC&=~(1<<PORTC1);
@@ -146,9 +144,11 @@ int main(void)
 	
 	control_switch_task.handler=control_switch;
 	
+	sei();
+	
 	while (1) 
     {
-		manage_task_queue();
+		run_tasks();
     }
 }
 
