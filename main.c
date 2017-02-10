@@ -81,7 +81,7 @@ void scan_buttons()
 	add_task(&scan_buttons_task);
 }
 
-#define TOGGLE_DELAY 1024
+#define TOGGLE_DELAY 2048
 TASK toggle_led_task;
 
 void toggle_led()
@@ -105,7 +105,7 @@ void start_adc()
 	add_task(&control_switch_task);
 }
 
-#define CONTROL_SWITCH_DELAY 1024
+#define CONTROL_SWITCH_DELAY 2048
 void control_switch()
 {
 	PORTC&=~(1<<PORTC1);
